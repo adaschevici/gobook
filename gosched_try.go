@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"strconv"
+	"time"
 )
 
 func showNumber(num int) {
-	fmt.Println(num)
+	tstamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+	fmt.Println(num, tstamp)
+	time.Sleep(time.Millisecond * 10)
 }
 
 func main() {
