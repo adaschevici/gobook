@@ -9,7 +9,8 @@ import (
 )
 
 var applicationStatus bool
-var url []string
+var urls []string
+var fullText string
 var urlsProcessed int
 var foundUrls []string
 var pageContent string
@@ -22,7 +23,7 @@ func readURLs(statusChannel chan int, textChannel chan string) {
 	fmt.Println("Grabbing", len(urls), "urls")
 	for i := 0; i < totalURLCount; i++ {
 
-		fmt.Println("Url", i, urs[i])
+		fmt.Println("Url", i, urls[i])
 		resp, _ := http.Get(urls[i])
 		text, err := ioutil.ReadAll(resp.Body)
 
@@ -57,7 +58,7 @@ func evaluateStatus(statusChannel chan int, textChannel chan string, processChan
 	for {
 		select {
 		case status := <-statusChannel:
-			fmt.Println(urlsProcessed, totalUrlCount)
+			fmt.Println(urlsProcessed, totalURLCount)
 			urlsProcessed++
 			if status == 0 {
 				fmt.Println("Got url")
@@ -81,11 +82,11 @@ func main() {
 	processChannel := make(chan bool)
 	totalURLCount = 0
 
-	urls = append(urls, "http://www.mastergoco.com/index1.html")
-	urls = append(urls, "http://www.mastergoco.com/index2.html")
-	urls = append(urls, "http://www.mastergoco.com/index3.html")
-	urls = append(urls, "http://www.mastergoco.com/index4.html")
-	urls = append(urls, "http://www.mastergoco.com/index5.html")
+	urls = append(urls, "http://localhost:8080/")
+	urls = append(urls, "http://localhost:8080/")
+	urls = append(urls, "http://localhost:8080/")
+	urls = append(urls, "http://localhost:8080/")
+	urls = append(urls, "http://localhost:8080/")
 
 	fmt.Println("Starting spider")
 
@@ -97,4 +98,16 @@ func main() {
 	go readURLs(statusChannel, textChannel)
 
 	go addToScrapedText(textChannel, processChannel)
+
+	for {
+		if applicationStatus == false {
+			fmt.Println(fullText)
+			fmt.Println("Done!")
+			break
+		}
+		select {
+		case sC := <-statusChannel:
+			fmt.Println("Message on StatusChannel", sC)
+		}
+	}
 }
