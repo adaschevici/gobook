@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -24,9 +25,11 @@ func readURLs(statusChannel chan int, textChannel chan string) {
 	for i := 0; i < totalURLCount; i++ {
 
 		fmt.Println("Url", i, urls[i])
+		fmt.Println("getting url", urls[i])
 		resp, _ := http.Get(urls[i])
 		text, err := ioutil.ReadAll(resp.Body)
 
+		fmt.Println(string(text))
 		textChannel <- string(text)
 
 		if err != nil {
@@ -49,7 +52,9 @@ func addToScrapedText(textChannel chan string, processChannel chan bool) {
 				close(processChannel)
 			}
 		case tC := <-textChannel:
+			fmt.Println("Adding to full text")
 			fullText += tC
+			fmt.Println(fullText)
 		}
 	}
 }
@@ -58,12 +63,13 @@ func evaluateStatus(statusChannel chan int, textChannel chan string, processChan
 	for {
 		select {
 		case status := <-statusChannel:
-			fmt.Println(urlsProcessed, totalURLCount)
+			fmt.Println("URLS Processed:", urlsProcessed, "VS total urls count:", totalURLCount)
 			urlsProcessed++
 			if status == 0 {
-				fmt.Println("Got url")
+				fmt.Println("Urls processed: ", urlsProcessed)
 			}
 			if status == 1 {
+				fmt.Println("Closing status channel")
 				close(statusChannel)
 			}
 			if urlsProcessed == totalURLCount {
@@ -76,6 +82,7 @@ func evaluateStatus(statusChannel chan int, textChannel chan string, processChan
 }
 
 func main() {
+	runtime.GOMAXPROCS(2)
 	applicationStatus = true
 	statusChannel := make(chan int)
 	textChannel := make(chan string)
