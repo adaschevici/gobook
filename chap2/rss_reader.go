@@ -162,7 +162,9 @@ func getRSS(rw http.ResponseWriter, req *http.Request) {
 		outputSVG.Rect(0, (i * feedSpace), width, feedSpace, "fill:"+colors[i]+";stroke:none;")
 		feeds[i].status = 0
 		go grabFeed(&feeds[i], feedChan, outputSVG)
-		<-feedChan
+		result := <-feedChan
+		Info.Println(result)
+
 	}
 
 	outputSVG.End()
@@ -178,7 +180,7 @@ func main() {
 	height = 400
 
 	feeds = append(feeds, Feed{index: 0, url: "https://groups.google.com/forum/feed/golang-nuts/msgs/rss_v2_0.xml?num=50", status: 0, itemCount: 0, complete: false, itemsComplete: false})
-	feeds = append(feeds, Feed{index: 1, url: "http://www.reddit.com/r/golang/.rss", status: 0, itemCount: 0, complete: false, itemsComplete: false})
+	// feeds = append(feeds, Feed{index: 1, url: "http://www.reddit.com/r/golang/.rss", status: 0, itemCount: 0, complete: false, itemsComplete: false})
 	feeds = append(feeds, Feed{index: 2, url: "https://groups.google.com/forum/feed/golang-dev/msgs/rss_v2_0.xml?num=50", status: 0, itemCount: 0, complete: false, itemsComplete: false})
 
 	colors = append(colors, "#ff9999")
