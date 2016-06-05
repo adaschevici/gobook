@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -74,22 +73,22 @@ func grabFeed(feed *Feed, feedChan chan bool, osvg *svg.SVG) {
 	startGrab := time.Now().Unix()
 	startGrabSeconds := startGrab - startTime
 
-	fmt.Println("Grabbing feed", feed.url, "at", startGrabSeconds, "second mark")
+	Info.Println("Grabbing feed", feed.url, "at", startGrabSeconds, "second mark")
 
 	if feed.status == 0 {
-		fmt.Println("Feed not read yet")
+		Info.Println("Feed not read yet")
 		feed.status = 1
 
 		startX := int(startGrabSeconds * 33)
 		startY := feedSpace * (feed.index)
 
-		fmt.Println(startY)
+		Info.Println(startY)
 		wg.Add(1)
 
 		rssFeed := rss.New(timeout, true, channelHandler, itemsHandler)
 
 		if err := rssFeed.Fetch(feed.url, nil); err != nil {
-			fmt.Fprintf(os.Stderr, "[e] %s: %s", feed.url, err)
+			Info.Println(os.Stderr, "[e] %s: %s", feed.url, err)
 			return
 		} else {
 			endSec := time.Now().Unix()
@@ -97,7 +96,7 @@ func grabFeed(feed *Feed, feedChan chan bool, osvg *svg.SVG) {
 			if endX == 0 {
 				endX = 1
 			}
-			fmt.Println("Read feed in", endX, "seconds")
+			Info.Println("Read feed in", endX, "seconds")
 			osvg.Rect(startX, startY, endX, feedSpace, "fill:#000000;opacity:.4")
 			wg.Wait()
 			endGrab := time.Now().Unix()
@@ -109,7 +108,7 @@ func grabFeed(feed *Feed, feedChan chan bool, osvg *svg.SVG) {
 			feedChan <- true
 		}
 	} else if feed.status == 1 {
-		fmt.Println("Feed already in progress")
+		Info.Println("Feed already in progress")
 	}
 }
 
@@ -119,11 +118,11 @@ func channelHandler(feed *rss.Feed, newchannels []*rss.Channel) {
 
 func itemsHandler(feed *rss.Feed, ch *rss.Channel, newitems []*rss.Item) {
 
-	fmt.Println("Found", len(newitems), "items in", feed.Url)
+	Info.Println("Found", len(newitems), "items in", feed.Url)
 
 	for i := range newitems {
 		url := *newitems[i].Guid
-		fmt.Println(url)
+		Info.Println(url)
 
 	}
 
@@ -155,7 +154,7 @@ func getRSS(rw http.ResponseWriter, req *http.Request) {
 
 	}
 
-	feedChan := make(chan bool, 3)
+	feedChan := make(chan bool, 2)
 
 	for i := range feeds {
 
@@ -180,6 +179,7 @@ func main() {
 	height = 400
 
 	feeds = append(feeds, Feed{index: 0, url: "https://groups.google.com/forum/feed/golang-nuts/msgs/rss_v2_0.xml?num=50", status: 0, itemCount: 0, complete: false, itemsComplete: false})
+	feeds = append(feeds, Feed{index: 1, url: "https://groups.google.com/forum/feed/golang-nuts/msgs/rss_v2_0.xml?num=50", status: 0, itemCount: 0, complete: false, itemsComplete: false})
 	// feeds = append(feeds, Feed{index: 1, url: "http://www.reddit.com/r/golang/.rss", status: 0, itemCount: 0, complete: false, itemsComplete: false})
 	feeds = append(feeds, Feed{index: 2, url: "https://groups.google.com/forum/feed/golang-dev/msgs/rss_v2_0.xml?num=50", status: 0, itemCount: 0, complete: false, itemsComplete: false})
 
