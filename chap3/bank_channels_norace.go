@@ -40,9 +40,7 @@ func main() {
 	}
 
 	// TODO: this is where the race condition still happens
-	mutex.Lock()
 	go transaction(0)
-	mutex.Unlock()
 	breakpoint := false
 	for {
 		if breakpoint == true {
@@ -75,6 +73,7 @@ func main() {
 }
 
 func transaction(amt int) bool {
+	mutex.Lock()
 	approved := false
 	if (balance - amt) < 0 {
 		approved = false
@@ -90,5 +89,6 @@ func transaction(amt int) bool {
 	transactionNo = transactionNo + 1
 	fmt.Println(transactionNo, "Transaction for $", amt, approvedText)
 	fmt.Println("\tRemaining balance $", balance)
+	mutex.Unlock()
 	return approved
 }
