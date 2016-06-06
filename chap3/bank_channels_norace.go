@@ -11,6 +11,7 @@ import (
 // TODO: this is still racy according to the golang race detector
 var balance int
 var transactionNo int
+var mutex sync.Mutex
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -39,7 +40,9 @@ func main() {
 	}
 
 	// TODO: this is where the race condition still happens
+	mutex.Lock()
 	go transaction(0)
+	mutex.Unlock()
 	breakpoint := false
 	for {
 		if breakpoint == true {
@@ -48,10 +51,13 @@ func main() {
 		select {
 		case amt := <-balanceChan:
 			fmt.Println("Transaction for $", amt)
-			if (balance - amt) < 0 {
+			mutex.Lock()
+			cond := balance - amt
+			mutex.Unlock()
+			if (cond) < 0 {
 				fmt.Println("Transaction failed")
 			} else {
-				balance = balance - amt
+				balance = cond
 				fmt.Println("Transaction succeeded")
 			}
 			fmt.Println("Balance now $", balance)
@@ -85,5 +91,4 @@ func transaction(amt int) bool {
 	fmt.Println(transactionNo, "Transaction for $", amt, approvedText)
 	fmt.Println("\tRemaining balance $", balance)
 	return approved
-	return true
 }
