@@ -49,9 +49,7 @@ func main() {
 		select {
 		case amt := <-balanceChan:
 			fmt.Println("Transaction for $", amt)
-			mutex.Lock()
 			cond := balance - amt
-			mutex.Unlock()
 			if (cond) < 0 {
 				fmt.Println("Transaction failed")
 			} else {
@@ -73,7 +71,6 @@ func main() {
 }
 
 func transaction(amt int) bool {
-	mutex.Lock()
 	approved := false
 	if (balance - amt) < 0 {
 		approved = false
@@ -89,6 +86,5 @@ func transaction(amt int) bool {
 	transactionNo = transactionNo + 1
 	fmt.Println(transactionNo, "Transaction for $", amt, approvedText)
 	fmt.Println("\tRemaining balance $", balance)
-	mutex.Unlock()
 	return approved
 }
