@@ -71,6 +71,8 @@ func main() {
 }
 
 func transaction(amt int) bool {
+	mutex.Lock()
+	defer mutex.Unlock()
 	approved := false
 	if (balance - amt) < 0 {
 		approved = false
