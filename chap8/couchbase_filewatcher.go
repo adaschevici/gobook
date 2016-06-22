@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/couchbase/go-couchbase"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/howeyc/fsnotify"
 )
 
@@ -105,21 +106,21 @@ func evalFile(event *fsnotify.FileEvent, bucket *couchbase.Bucket) {
 	hashString := generateHash(trueFileName)
 
 	if create == true {
-		log.Print("CREATE")
+		log.Printf("CREATE")
 		updateFile(trueFileName, bucket)
 		alertServers(hashString, event.Name, "CREATE", event.Name, 0)
 	}
 
 	delete := event.IsDelete()
 	if delete == true {
-		log.Print("DELETE")
+		log.Printf("DELETE")
 		removeFile(trueFileName, bucket)
 		alertServers(hashString, event.Name, "DELETE", event.Name, 0)
 	}
 
 	modify := event.IsModify()
 	if modify == true {
-		log.Print("MODIFY")
+		log.Printf("MODIFY")
 		newVersion := updateExistingFile(trueFileName, bucket)
 		fmt.Println(newVersion)
 		alertServers(hashString, trueFileName, "MODIFY", event.Name, newVersion)
@@ -148,9 +149,13 @@ func updateFile(name string, bucket *couchbase.Bucket) {
 	checkFile := File{}
 	err := bucket.Get(hashString, &checkFile)
 	if err != nil {
+		log.Printf("INSERT")
+		spew.Dump(err)
 		fmt.Println("New File Added", name)
 		bucket.Set(hashString, 0, thisFile)
 	}
+	bucket.Get(hashString, &checkFile)
+	log.Printf("File inserted: %s", checkFile.Name)
 }
 
 var Clients []Client
