@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
+	"os"
 	"os/user"
 	"strings"
 	"time"
@@ -103,18 +105,21 @@ func evalFile(event *fsnotify.FileEvent, bucket *couchbase.Bucket) {
 	hashString := generateHash(trueFileName)
 
 	if create == true {
+		log.Print("CREATE")
 		updateFile(trueFileName, bucket)
 		alertServers(hashString, event.Name, "CREATE", event.Name, 0)
 	}
 
 	delete := event.IsDelete()
 	if delete == true {
+		log.Print("DELETE")
 		removeFile(trueFileName, bucket)
 		alertServers(hashString, event.Name, "DELETE", event.Name, 0)
 	}
 
 	modify := event.IsModify()
 	if modify == true {
+		log.Print("MODIFY")
 		newVersion := updateExistingFile(trueFileName, bucket)
 		fmt.Println(newVersion)
 		alertServers(hashString, trueFileName, "MODIFY", event.Name, newVersion)
@@ -157,6 +162,8 @@ func main() {
 	someUser, _ := user.Current()
 	currentUser := someUser.Username
 	var listenFolder = fmt.Sprintf("/Users/%s/couchbase_volume/", currentUser)
+	log.SetOutput(os.Stdout)
+	log.Printf(listenFolder)
 	couchbaseClient, err := couchbase.Connect("http://localhost:8091/")
 	if err != nil {
 		fmt.Println("Error connecting to Couchbase", err)
