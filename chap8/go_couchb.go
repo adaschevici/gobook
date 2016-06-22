@@ -22,13 +22,13 @@ func main() {
 	if err != nil {
 		fmt.Println("ERRROR OPENING BUCKET:", err)
 	}
-	value := "test value"
-	cas, _ := bucket.Insert("document_name", &value, 0)
-	fmt.Printf("Inserted document CAS is `%08x`\n", cas)
+	// value := "test value"
+	// cas, _ := bucket.Insert("document_name", &value, 0)
+	// fmt.Printf("Inserted document CAS is `%08x`\n", cas)
 
-	var someValue interface{}
-	scas, _ := bucket.Get("document_name", &someValue)
-	fmt.Printf("Got value `%+v` with CAS `%08x`\n", value, scas)
+	// var someValue interface{}
+	// scas, _ := bucket.Get("document_name", &someValue)
+	// fmt.Printf("Got value `%+v` with CAS `%08x`\n", value, scas)
 
 	vq := gocb.NewViewQuery("beer", "by_name").Limit(2)
 	rows, err := bucket.ExecuteViewQuery(vq)
@@ -44,6 +44,18 @@ func main() {
 	}
 	if err := rows.Close(); err != nil {
 		fmt.Printf("View query error: %s\n", err)
+	}
+	myQuery := gocb.NewN1qlQuery("SELECT * FROM `beer-sample`")
+	rows, err = bucket.ExecuteN1qlQuery(myQuery, nil)
+	if err != nil {
+		fmt.Printf("N1QL query error: %s\n", err)
+	}
+
+	for rows.Next(&row) {
+		fmt.Printf("Row: %+v\n", row)
+	}
+	if err = rows.Close(); err != nil {
+		fmt.Printf("N1QL query error: %s\n", err)
 	}
 	fmt.Println("Example Successful - Exiting")
 }
