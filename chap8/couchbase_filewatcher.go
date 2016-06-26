@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/couchbase/go-couchbase"
+	"github.com/couchbase/gocb"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/howeyc/fsnotify"
 )
@@ -79,11 +79,11 @@ func startServer(listener net.Listener) {
 
 }
 
-func removeFile(name string, bucket *couchbase.Bucket) {
-	bucket.Delete(generateHash(name))
+func removeFile(name string, bucket *gocb.Bucket) {
+	bucket.Remove(generateHash(name), 0)
 }
 
-func updateExistingFile(name string, bucket *couchbase.Bucket) int {
+func updateExistingFile(name string, bucket *gocb.Bucket) int {
 	fmt.Println(name, "updated")
 	hashString := generateHash(name)
 
@@ -93,11 +93,16 @@ func updateExistingFile(name string, bucket *couchbase.Bucket) int {
 	thisFile.Version = thisFile.Version + 1
 	thisFile.LastModified = time.Now().Unix()
 	Files[hashString] = thisFile
-	bucket.Set(hashString, 0, Files[hashString])
+	var file map[string]interface{}
+	cas, err := bucket.Get(hashString, &file)
+	if err != nil {
+		log.Printf("Error is : %v", err)
+	}
+	bucket.Replace(hashString, &file, cas, 0)
 	return thisFile.Version
 }
 
-func evalFile(event *fsnotify.FileEvent, bucket *couchbase.Bucket) {
+func evalFile(event *fsnotify.FileEvent, bucket *gocb.Bucket) {
 	fmt.Println(event.Name, "changed")
 	create := event.IsCreate()
 	fileComponents := strings.Split(event.Name, "\\")
@@ -131,7 +136,7 @@ func evalFile(event *fsnotify.FileEvent, bucket *couchbase.Bucket) {
 	}
 }
 
-func updateFile(name string, bucket *couchbase.Bucket) {
+func updateFile(name string, bucket *gocb.Bucket) {
 	thisFile := File{}
 	hashString := generateHash(name)
 
@@ -147,12 +152,12 @@ func updateFile(name string, bucket *couchbase.Bucket) {
 	Files[hashString] = thisFile
 
 	checkFile := File{}
-	err := bucket.Get(hashString, &checkFile)
+	cas, err := bucket.Get(hashString, &checkFile)
+	fmt.Printf("Got document so file is being watched %v.\n", cas)
 	if err != nil {
-		log.Printf("INSERT")
 		spew.Dump(err)
 		fmt.Println("New File Added", name)
-		bucket.Set(hashString, 0, thisFile)
+		bucket.Insert(hashString, thisFile, 0)
 	}
 	bucket.Get(hashString, &checkFile)
 	log.Printf("File inserted: %s", checkFile.Name)
@@ -169,15 +174,11 @@ func main() {
 	var listenFolder = fmt.Sprintf("/Users/%s/couchbase_volume/", currentUser)
 	log.SetOutput(os.Stdout)
 	log.Printf(listenFolder)
-	couchbaseClient, err := couchbase.Connect("http://localhost:8091/")
+	cluster, err := gocb.Connect("couchbase://localhost/")
 	if err != nil {
 		fmt.Println("Error connecting to Couchbase", err)
 	}
-	pool, err := couchbaseClient.GetPool("default")
-	if err != nil {
-		fmt.Println("Error getting pool", err)
-	}
-	bucket, err := pool.GetBucket("file_manager")
+	bucket, err := cluster.OpenBucket("file_manager", "")
 	if err != nil {
 		fmt.Println("Error getting bucket", err)
 	}
