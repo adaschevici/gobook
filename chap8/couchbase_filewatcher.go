@@ -90,6 +90,7 @@ func updateExistingFile(name string, bucket *gocb.Bucket) int {
 	thisFile := Files[hashString]
 	thisFile.Hash = hashString
 	thisFile.Name = name
+	log.Printf("The NAME: %v", name)
 	thisFile.Version = thisFile.Version + 1
 	thisFile.LastModified = time.Now().Unix()
 	Files[hashString] = thisFile
